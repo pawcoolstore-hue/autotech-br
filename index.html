@@ -85,6 +85,36 @@ body{overflow-x:hidden}
 .wa-fallback{display:inline-flex;margin-top:12px;align-items:center;justify-content:center}
 @media(max-width:640px){.wa-float{bottom:16px;right:14px;padding:13px}.wa-float .wa-label{display:none}}
 @media(prefers-reduced-motion:reduce){.wa-float{transition:none}.wa-float:hover{transform:none}}
+
+/* Motion v2: a distinct entrance for each content block while scrolling. */
+@media (prefers-reduced-motion: no-preference){
+  .at-reveal{
+    opacity:0!important;
+    transform:translate3d(0,74px,0) scale(.975)!important;
+    filter:blur(5px);
+    transition: opacity 1s cubic-bezier(.16,1,.3,1),
+                transform 1s cubic-bezier(.16,1,.3,1),
+                filter 1s cubic-bezier(.16,1,.3,1)!important;
+    transition-delay:var(--at-delay,0ms)!important;
+    will-change:transform,opacity,filter;
+  }
+  .at-reveal.at-visible{
+    opacity:1!important;
+    transform:translate3d(0,0,0) scale(1)!important;
+    filter:blur(0);
+    will-change:auto;
+  }
+  .detail-section .detail-image.at-reveal{transform:translate3d(-85px,0,0) scale(.955)!important}
+  .detail-section .detail-image.at-reveal.at-visible{transform:translate3d(0,0,0) scale(1)!important}
+  .detail-section.alternate .detail-image.at-reveal{transform:translate3d(85px,0,0) scale(.955)!important}
+  .detail-section.alternate .detail-image.at-reveal.at-visible{transform:translate3d(0,0,0) scale(1)!important}
+  .service-card.at-reveal{transform:translate3d(0,88px,0) scale(.95)!important}
+  .service-card.at-reveal.at-visible{transform:translate3d(0,0,0) scale(1)!important}
+  .service-card.at-reveal.at-visible:hover{transform:translate3d(0,-7px,0) scale(1.01)!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .at-reveal{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}
+}
 </style></head>
 <body><div aria-hidden="true" class="at-progress"></div>
 <header class="header"><a aria-label="AutoTech início" class="brand" href="#inicio"><span class="mark">A</span><span><strong>AUTOTECH</strong><small data-i="brandSub">ELETRÔNICA • DIAGNÓSTICO</small></span></a><nav class="nav" id="nav"><a data-i="navHome" href="#inicio">Início</a><a data-i="navServices" href="#servicos">Serviços</a><a data-i="navEquipment" href="#equipamentos">Equipamentos</a><a data-i="navAbout" href="#sobre">Sobre</a><a data-i="navContact" href="#contato">Contato</a></nav><div class="right"><div aria-label="Language" class="lang"><button class="active" data-lang="pt" type="button">PT-BR</button><button data-lang="en" type="button">EN</button></div><button aria-expanded="false" aria-label="Open menu" class="menu" id="menu">☰</button></div></header>
@@ -109,13 +139,52 @@ Object.assign(T.pt,{waTalk:'Falar no WhatsApp',waSend:'Enviar pelo WhatsApp ↗'
 Object.assign(T.en,{waTalk:'Chat on WhatsApp',waSend:'Send via WhatsApp ↗',waHello:'Hello! I would like to request service from AUTOTECH.'});
 let language='pt';function setLanguage(l){language=l;document.documentElement.lang=l==='pt'?'pt-BR':'en';document.querySelectorAll('[data-i]').forEach(e=>{const v=T[l][e.dataset.i];if(v!==undefined)e.innerHTML=v});document.querySelectorAll('[data-lang]').forEach(b=>{b.classList.toggle('active',b.dataset.lang===l);b.setAttribute('aria-pressed',String(b.dataset.lang===l))});const problem=document.querySelector('[name=problem]');problem.placeholder=problem.dataset['placeholder'+(l==='pt'?'Pt':'En')];document.title=l==='pt'?'AUTOTECH | Eletrônica Automotiva e Diagnóstico':'AUTOTECH | Automotive Electronics & Diagnostics';document.getElementById('waDirect').href='https://wa.me/5513997711645?text='+encodeURIComponent(T[l].waHello);document.getElementById('waDirect').setAttribute('aria-label',T[l].waTalk);try{localStorage.setItem('autotech-lang',l)}catch(e){}}document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>setLanguage(b.dataset.lang)));const menu=document.getElementById('menu'),nav=document.getElementById('nav');menu.addEventListener('click',()=>{const open=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(open))});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')}));const form=document.getElementById('requestForm'),result=document.getElementById('result'),summary=document.getElementById('summary');form.addEventListener('submit',e=>{e.preventDefault();if(!form.reportValidity())return;const d=new FormData(form),service=d.get('service');const labels={keys:T[language].keyTitle,ecu:T[language].ecuTitle,srs:T[language].srsTitle,other:T[language].other};summary.textContent=[`${T[language].fieldName.replace(' *','')}: ${d.get('name')}`,`${T[language].fieldPhone.replace(' *','')}: ${d.get('phone')}`,`${T[language].fieldMake.replace(' *','')}: ${d.get('vehicle')}`,`${T[language].fieldYear.replace(' *','')}: ${d.get('year')}`,`${T[language].fieldService.replace(' *','')}: ${labels[service]||service}`,`${T[language].fieldProblem.replace(' *','')}: ${d.get('problem')}`].join('\n');result.hidden=false;const waMessage=T[language].waHello+'\n\n'+summary.textContent;const url='https://wa.me/5513997711645?text='+encodeURIComponent(waMessage);document.getElementById('waSend').href=url;result.scrollIntoView({behavior:'smooth',block:'nearest'});window.open(url,'_blank','noopener,noreferrer')});document.getElementById('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(summary.textContent);document.getElementById('copyStatus').textContent=T[language].copied}catch(e){document.getElementById('copyStatus').textContent=T[language].copyFail}});let saved='pt';try{saved=localStorage.getItem('autotech-lang')||'pt'}catch(e){}setLanguage(saved==='en'?'en':'pt');
 </script><script>
-/* Scroll reveal with accessibility and graceful fallback */
+/* AUTOTECH scroll choreography: visually clear, section-by-section reveal. */
 (function(){
-  var nodes=document.querySelectorAll('.section-heading,.service-card,.detail,.feature,.equipment-card,.about-content,.contact-content');
-  if(!('IntersectionObserver' in window)||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  nodes.forEach(function(el){el.classList.add('at-reveal')});
-  var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('at-visible');observer.unobserve(entry.target)}})},{threshold:.08,rootMargin:'0px 0px -24px 0px'});
-  nodes.forEach(function(el){observer.observe(el)});
+  const reduceMotion=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduceMotion || !('IntersectionObserver' in window)) return;
+  const selectors=[
+    '.at-editorial-grid > *',
+    '.services > .section-heading',
+    '.services .service-card',
+    '.detail-section .detail-image',
+    '.detail-section .detail-copy',
+    '.equipment .equipment-grid > *',
+    '.about > .kicker', '.about > h2', '.about .features > div',
+    '.contact-grid > *',
+    '.footer-inner'
+  ];
+  const items=Array.from(new Set(selectors.flatMap(sel=>Array.from(document.querySelectorAll(sel)))));
+  const observer=new IntersectionObserver(function(entries){
+    for(const entry of entries){
+      if(entry.isIntersecting){
+        const el=entry.target;
+        el.classList.add('at-visible');
+        observer.unobserve(el);
+      }
+    }
+  },{threshold:0.12,rootMargin:'0px 0px -45px 0px'});
+  items.forEach(function(el){
+    const bounds=el.getBoundingClientRect();
+    // Elements already visible on load must not flash or disappear.
+    if(bounds.top < window.innerHeight*0.90 && bounds.bottom>0) return;
+    el.classList.add('at-reveal');
+    const parent=el.parentElement;
+    if(parent){
+      const siblings=Array.from(parent.children).filter(c=>items.includes(c));
+      const index=siblings.indexOf(el);
+      el.style.setProperty('--at-delay',Math.min(index,4)*110+'ms');
+    }
+    observer.observe(el);
+  });
+  // Failsafe: never leave hidden content behind when the tab becomes visible again.
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) items.forEach(el=>{
+      if(el.classList.contains('at-reveal') && el.getBoundingClientRect().top < window.innerHeight*.85){
+        el.classList.add('at-visible');observer.unobserve(el);
+      }
+    });
+  });
 })();
 </script><script>
 (function(){
